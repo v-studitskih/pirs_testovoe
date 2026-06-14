@@ -4,11 +4,11 @@
 
 ## Технологии
 
-- React 19
+- React 
 - TypeScript
 - Vite
 - Tailwind CSS
-- React Router v7
+- React Router
 - Mantine UI (DateInput, DatePicker)
 - PrimeReact (MultiSelect)
 
