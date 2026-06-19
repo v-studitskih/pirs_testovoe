@@ -10,17 +10,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mantine/core": "^9.3.1",
-    "@mantine/dates": "^9.3.1",
-    "@tailwindcss/vite": "^4.3.0",
-    "axios": "^1.17.0",
-    "dayjs": "^1.11.21",
-    "primereact": "^10.9.8",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@hookform/resolvers": "^5.4.0",
+    "@mui/icons-material": "^9.1.1",
+    "@mui/material": "^9.1.1",
+    "@mui/x-date-pickers": "^9.5.0",
+    "@tailwindcss/vite": "^4.3.1",
+    "@tanstack/react-query": "^5.101.0",
+    "axios": "^1.18.0",
+    "date-fns": "^4.1.0",
     "react": "^19.2.6",
-    "react-calendar": "^6.0.1",
     "react-dom": "^19.2.6",
+    "react-hook-form": "^7.79.0",
     "react-router-dom": "^7.17.0",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.0",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -32,7 +37,6 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
-    "openapi-typescript-codegen": "^0.30.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"

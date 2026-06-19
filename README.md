@@ -1,1 +1,0 @@
-# pirs_testovoe

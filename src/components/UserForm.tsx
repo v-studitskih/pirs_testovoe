@@ -1,167 +1,91 @@
-import React, { useEffect, useState } from "react";
-import { DateInput } from "@mantine/dates";
-import Select from "./Select";
-import Button from "./Button";
-import { DatePicker } from "@mantine/dates";
-import useClickOutside from "../hooks/useClickOutside";
-import { getPhotoUrl } from "../mock/users";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { Stack, Button } from "@mui/material";
+import { type Schema, schema } from "../types/schema";
+import RHFAutocomplete from "./RHFAutocomplete";
+import { useEffect, useState } from "react";
+import { useFoodList } from "../services/queries";
+import RHFDateTimerPicker from "./RHFDatePicker";
+import Avatar from "@mui/material/Avatar";
+import type { User } from "../types/user";
+import { parseDate, formatDate } from "../utils/dateUtils";
+import RHFTextField from "./RHFTextField";
 
-type UserFormProps = {
-  initialUsername?: string;
-  initialEmail?: string;
-  initialBirthdate?: string;
-  initialFavoriteFoodIds?: number[];
-  initialPhotoId?: number | null;
-  onSubmit: (formData: FormData) => void;
-  submitButtonText: string;
+type Props = {
+  user?: User;
+  onSubmit: (data: FormData) => void;
+  submitButtonText?: string;
 };
 
 const UserForm = ({
-  initialUsername = "",
-  initialEmail = "",
-  initialBirthdate = "",
-  initialFavoriteFoodIds = [],
-  initialPhotoId,
+  user,
   onSubmit,
-  submitButtonText,
-}: UserFormProps) => {
+  submitButtonText = "Сохранить",
+}: Props) => {
   const [image, setImage] = useState<File | null>(null);
-  const [name, setName] = useState<string>(initialUsername);
-  const [email, setEmail] = useState<string>(initialEmail);
-  const [birthDate, setBirthDate] = useState<string | null>(initialBirthdate);
-  const [selectedFood, setSelectedFood] = useState<number[]>(
-    initialFavoriteFoodIds,
-  );
+  const foodListQuery = useFoodList();
 
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [errors, setErrors] = useState<{
-    name?: string;
-    email?: string;
-    birthdate?: string;
-  }>({});
-  const [touched, setTouched] = useState<{
-    name?: boolean;
-    email?: boolean;
-    birthdate?: boolean;
-  }>({});
-
-  // закрытие календаря
-  const calendarRef = useClickOutside(() => {
-    setShowCalendar(false);
+  const { control, reset, handleSubmit } = useForm<Schema>({
+    mode: "onBlur",
+    resolver: yupResolver(schema),
+    defaultValues: {
+      name: "",
+      email: "",
+      options: [],
+      birthDate: undefined,
+    },
   });
 
-  // синхронизация для редактирования
   useEffect(() => {
-    if (initialUsername) setName(initialUsername);
-    if (initialEmail) setEmail(initialEmail);
-
-    if (initialBirthdate) {
-      let formattedDate = initialBirthdate;
-      if (initialBirthdate.includes(".")) {
-        const [day, month, year] = initialBirthdate.split(".");
-        formattedDate = `${year}-${month}-${day}`;
-      }
-      setBirthDate(formattedDate);
+    if (user) {
+      console.log(new Date(user.birthdate));
+      reset({
+        name: user.username,
+        email: user.email,
+        options: user.favorite_food_ids?.map(String) || [],
+        birthDate: user.birthdate ? parseDate(user.birthdate) : new Date(),
+      });
     }
-    if (initialFavoriteFoodIds?.length) setSelectedFood(initialFavoriteFoodIds);
-  }, [initialUsername, initialEmail, initialBirthdate, initialFavoriteFoodIds]);
+  }, [user, reset]);
 
-  //   валидация
-  const validate = (name: string, value: string) => {
-    let error = "";
-
-    if (name === "name" && !value.trim()) {
-      error = "Необходимо заполнить «Имя».";
-    }
-
-    if (name === "email") {
-      if (!value.trim()) {
-        error = "Необходимо заполнить «Email».";
-      } else if (!/\S+@\S+\.\S+/.test(value)) {
-        error = "Некорректный email";
-      }
-    }
-
-    if (name === "birthdate" && !value) {
-      error = "Необходимо заполнить «Дата рождения».";
-    }
-
-    setErrors((prev) => ({ ...prev, [name]: error || undefined }));
-  };
-
-  // обработка потери фокуса
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    validate(name, value);
-  };
-
-  const handleDateBlur = () => {
-    setTouched((prev) => ({ ...prev, birthdate: true }));
-    validate("birthdate", birthDate || "");
-  };
-
-  //   отправка формы
-  const onSubmithandler = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    setTouched({ name: true, email: true, birthdate: true });
-
-    validate("name", name);
-    validate("email", email);
-    validate("birthdate", birthDate || "");
-
-    if (errors.name || errors.email || errors.birthdate) {
-      return;
-    }
-
+  const onFormSubmit = (data: Schema) => {
     const formData = new FormData();
-
-    formData.append("username", name);
-    formData.append("email", email);
-
-    if (birthDate) {
-      const [year, month, day] = birthDate.split("-");
-      const formattedDate = `${day}.${month}.${year}`;
-      formData.append("birthdate", formattedDate);
+    formData.append("username", data.name);
+    formData.append("email", data.email);
+    if (data.birthDate) {
+      formData.append("birthdate", formatDate(data.birthDate));
     }
-
-    if (selectedFood.length > 0) {
-      formData.append("favorite_food_ids[]", selectedFood.join(","));
+    if (data.options && data.options.length > 0) {
+      data.options.forEach((id) => {
+        if (id) {
+          formData.append("favorite_food_ids[]", id);
+        }
+      });
     }
-
-    image && formData.append("upload_photo", image);
+    if (image) {
+      formData.append("upload_photo", image);
+    }
 
     onSubmit(formData);
   };
 
-  // для выбора даты из календаря
-  const handleDataChange = (value: any) => {
-    setBirthDate(value);
-    setShowCalendar(false);
-    if (errors.birthdate) setErrors({ ...errors, birthdate: undefined });
-  };
-
   return (
-    <form action="" onSubmit={onSubmithandler}>
-
-      {/* аватарка*/}
-      <div className="flex align-middle justify-center text-center mt-7.5">
+    <div className="pt-17.5 py-4 w-full px-4 mx-auto max-w-135 md:max-w-180 lg:max-w-240 xl:max-w-285 2xl:max-w-330">
+      <div className="flex align-middle justify-center text-center">
         <label
           className="text-[#212529] text-base font-normal leading-6 cursor-pointer"
           htmlFor="image1"
         >
-          <img
-            className="w-[150px] h-[150px] rounded-full object-cover"
+          <Avatar
+            alt="аватарка"
+            sx={{ margin: "0 auto", width: "150px", height: "150px" }}
             src={
               image
                 ? URL.createObjectURL(image)
-                : initialPhotoId
-                  ? getPhotoUrl(initialPhotoId)
+                : user?.photo_id
+                  ? `http://tasks.tizh.ru/file/get?id=${user.photo_id}`
                   : "http://tasks.tizh.ru/images/user-placeholder.png"
             }
-            alt="аватарка"
           />
           <input
             onChange={(e) => setImage(e.target.files?.[0] || null)}
@@ -173,143 +97,35 @@ const UserForm = ({
           <span className="block mt-2">Заменить</span>
         </label>
       </div>
+      <form onSubmit={handleSubmit(onFormSubmit)}>
+        <Stack
+          spacing={2}
+          sx={{ alignItems: "center", justifyContent: "center", mt: 7.5 }}
+        >
+          <RHFTextField name="name" control={control} label="Имя" />
 
-      {/* имя */}
-      <div className="w-full">
-        <p className="text-[#212529] text-base font-normal leading-6 mb-1">
-          Имя
-        </p>
-        <input
-          name="name"
-          onChange={(e) => setName(e.target.value)}
-          onBlur={handleBlur}
-          value={name}
-          className={`w-full border px-3 py-2 rounded ${errors.name ? "border-red-500" : "border-[#dee2e6]"}`}
-          type="text"
-          required
-        />
-        {touched.name && errors.name && (
-          <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-        )}
-      </div>
-
-      {/* Почта */}
-      <div className="w-full">
-        <p className="text-[#212529] text-base font-normal leading-6 mb-1">
-          Email
-        </p>
-        <input
-          name="email"
-          onChange={(e) => setEmail(e.target.value)}
-          onBlur={handleBlur}
-          value={email}
-          className={`w-full border px-3 py-2 rounded ${errors.email ? "border-red-500" : "border-[#dee2e6]"}`}
-          type="email"
-          required
-        />
-        {touched.email && errors.email && (
-          <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-        )}
-      </div>
-
-      {/* дата рождения */}
-      <div>
-        <p className="text-[#212529] text-base font-normal leading-6 mb-1">
-          Дата рождения
-        </p>
-        <div className="flex items-center">
-          <div className="relative">
-
-            {/* кнопка с календарем */}
-            <button
-              type="button"
-              title="Выбрать дату"
-              className="w-10.5 h-9.5 flex items-center justify-center border border-[#dee2e6] bg-[#f8f9fa] cursor-pointer rounded-l-sm"
-              onClick={() => setShowCalendar(!showCalendar)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                fill="#9BACB9"
-                viewBox="0 0 16 16"
-              >
-                <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z" />
-                <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
-              </svg>
-            </button>
-
-            {showCalendar && (
-              <div
-                ref={calendarRef}
-                className="absolute top-full left-0 mt-1 z-50 bg-white rounded-md shadow-lg border border-gray-200"
-              >
-                <DatePicker
-                  value={birthDate}
-                  onChange={handleDataChange}
-                  locale="ru"
-                />
-              </div>
-            )}
-          </div>
-
-            {/* кнопка для очистки */}
-          <button
-            type="button"
-            title="Очистить поле"
-            className="w-10.5 h-9.5 flex items-center justify-center border border-[#dee2e6] bg-[#f8f9fa] cursor-pointer"
-            onClick={() => setBirthDate(null)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="#9BACB9"
-              viewBox="0 0 16 16"
-            >
-              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z" />
-            </svg>
-          </button>
-
-          <DateInput
-            value={birthDate}
-            clearable
-            onBlur={handleDateBlur}
-            onChange={(value) => {
-              setBirthDate(value);
-            }}
-            valueFormat="DD.MM.YYYY"
-            className="w-full"
-            clearSectionMode="rightSection"
-            styles={{
-              input: {
-                padding: "0.375rem 0.75rem",
-                height: "38px",
-                fontSize: "16px",
-                fontWeight: "400",
-                lineHeight: "1.5",
-                borderTopLeftRadius: "0",
-                borderBottomLeftRadius: "0",
-                borderTopRightRadius: "0.25rem",
-                borderBottomRightRadius: "0.25rem",
-                borderColor: errors.birthdate ? "#ef4444" : "#dee2e6",
-              },
-            }}
+          <RHFTextField name="email" control={control} label="Email" />
+          <RHFDateTimerPicker
+            name="birthDate"
+            label="Дата рождения"
+            control={control}
           />
-        </div>
-        {touched.birthdate && errors.birthdate && (
-          <p className="text-red-500 text-sm mt-1">{errors.birthdate}</p>
-        )}
-      </div>
-
-        {/* еда */}
-      <div className="text-[#212529] text-base font-normal leading-6 mb-3">
-        <p>Любимая еда</p>
-        <Select selectedIds={selectedFood} onChange={setSelectedFood} />
-      </div>
-
-      <Button text={submitButtonText} type={"submit"} styles={"bg-[#198754]"} />
-    </form>
+          <RHFAutocomplete
+            name="options"
+            label="Любимая еда"
+            options={foodListQuery.data}
+            control={control}
+          />
+          <Button
+            variant="contained"
+            type="submit"
+            sx={{ alignSelf: "flex-start", mt: 2 }}
+          >
+            {submitButtonText}
+          </Button>
+        </Stack>
+      </form>
+    </div>
   );
 };
 
