@@ -1,16 +1,18 @@
 # pirs_testovoe
 
-Приложение для управления пользователями на React + TypeScript (использовать его было мучительно больно).
+Приложение для управления пользователями на React + TypeScript.
 
 ## Технологии
 
-- React 
-- TypeScript
+- React
 - Vite
 - Tailwind CSS
 - React Router
-- Mantine UI (DateInput, DatePicker)
-- PrimeReact (MultiSelect)
+- Material-UI
+- TanStack Query
+- React Hook Form + Yup
+- date-fns
+- Axios
 
 ## Функционал
 
@@ -19,7 +21,6 @@
 - ✅ Редактирование пользователя
 - ✅ Удаление пользователя
 - ✅ Сортировка по колонкам
-- ✅ Фильтрация по диапазону дат рождения
 - ✅ Фильтрация по любимой еде
 - ✅ Валидация формы с подсказками
 
