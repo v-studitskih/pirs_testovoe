@@ -29,8 +29,6 @@
 
 | Страница | Скриншот |
 |----------|----------|
-
-=======
 | Список пользователей | ![Home](https://raw.githubusercontent.com/v-studitskih/pirs_testovoe/21d7f84a100292745afe1bfc7a40752592e4e488/screenshots/home.png) |
 | Создание пользователя | ![Create](https://raw.githubusercontent.com/v-studitskih/pirs_testovoe/21d7f84a100292745afe1bfc7a40752592e4e488/screenshots/createuser.png) |
 | Редактирование пользователя | ![Edit](https://raw.githubusercontent.com/v-studitskih/pirs_testovoe/21d7f84a100292745afe1bfc7a40752592e4e488/screenshots/updateuser.png) |
