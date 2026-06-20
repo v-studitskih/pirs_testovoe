@@ -17,6 +17,7 @@ const SearchDatePicker = ({ value, onChange, label }: Props) => {
       onChange={(date) => {
         onChange(date ? formatDate(date) : "");
       }}
+     slotProps={{ field: { clearable: true } }}
     />
   );
 };

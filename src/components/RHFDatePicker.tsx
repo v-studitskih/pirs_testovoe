@@ -27,6 +27,7 @@ const RHFDatePicker = ({ name, control, label }: Props) => {
                 error: !!error,
                 helperText: error?.message,
               },
+              field: { clearable: true }
             }}
           />
         );
